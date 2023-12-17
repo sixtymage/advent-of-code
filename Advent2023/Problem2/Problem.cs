@@ -21,7 +21,8 @@ public class Problem : IProblem
   {
     var lines = await File.ReadAllLinesAsync(_filename);
 
-    int sum = 0;
+    int sumGameId = 0;
+    int sumPower = 0;
     foreach (var line in lines)
     {
       (string game, string actions) = SplitLine(line);
@@ -31,10 +32,15 @@ public class Problem : IProblem
 
       if (IsGamePossible(handfuls))
       {
-        sum += gameId;
+        sumGameId += gameId;
       }
+
+      var minimum = FindMinimumForLegalGame(handfuls);
+      var power = CalculatePower(minimum);
+      sumPower += power;
     }
-    Console.WriteLine($"Sum of Ids of Possible Games: {sum}");
+    Console.WriteLine($"Sum of ids of possible games: {sumGameId}");
+    Console.WriteLine($"Sum of power of all games: {sumPower}");
   }
 
   private static (string first, string second) SplitLine(string line)
@@ -142,10 +148,27 @@ public class Problem : IProblem
     {
       return false;
     }
-    if (handful.NumBlue > MaxBlue) 
+    if (handful.NumBlue > MaxBlue)
     {
       return false;
     }
     return true;
+  }
+
+  private static Handful FindMinimumForLegalGame(List<Handful> handfuls)
+  {
+    var minimum = new Handful();
+    foreach (var handful in handfuls)
+    {
+      minimum.NumRed = handful.NumRed > minimum.NumRed ? handful.NumRed : minimum.NumRed;
+      minimum.NumGreen = handful.NumGreen > minimum.NumGreen ? handful.NumGreen: minimum.NumGreen;
+      minimum.NumBlue = handful.NumBlue > minimum.NumBlue ? handful.NumBlue : minimum.NumBlue;
+    }
+    return minimum;
+  }
+
+  private int CalculatePower(Handful minimum)
+  {
+    return minimum.NumRed * minimum.NumGreen * minimum.NumBlue;
   }
 }

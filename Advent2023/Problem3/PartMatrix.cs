@@ -97,56 +97,51 @@
       return value;
     }
 
-    public bool IsPartNumber(PartNumberLocation location)
+    public static bool IsPartNumber(List<SymbolLocation> surroundingSymbols)
     {
-      if (AreSymbolsAbove(location))
-      {
-        return true;
-      }
-      if (AreSymbolsBelow(location))
-      {
-        return true;
-      }
-      if (AreSymbolsBeside(location))
-      {
-        return true;
-      }
-
-      return false;
+      return surroundingSymbols.Any(x => x.Symbol != '.' && !char.IsDigit(x.Symbol));
     }
 
-    private bool AreSymbolsAbove(PartNumberLocation location)
+    public List<SymbolLocation> GetSurroundingSymbols(PartNumberLocation location)
+    {
+      var symbols = new List<SymbolLocation>();
+
+      symbols.AddRange(FindSymbolsAbove(location));
+      symbols.AddRange(FindSymbolsBelow(location));
+      symbols.AddRange(FindSymbolsBeside(location));
+      return symbols;
+    }
+
+    private List<SymbolLocation> FindSymbolsAbove(PartNumberLocation location)
     {
       if (location.Row == 0)
       {
-        return false;
+        return [];
       }
-      return AreSymbolsInSegment(location.Row - 1, location.StartCol, location.EndCol);
+      return FindSymbolsInSegment(location.Row - 1, location.StartCol, location.EndCol);
     }
 
-    private bool AreSymbolsBelow(PartNumberLocation location)
+    private List<SymbolLocation> FindSymbolsBelow(PartNumberLocation location)
     {
       if (location.Row == Rows - 1)
       {
-        return false;
+        return [];
       }
-      return AreSymbolsInSegment(location.Row + 1, location.StartCol, location.EndCol);
+      return FindSymbolsInSegment(location.Row + 1, location.StartCol, location.EndCol);
     }
 
-    private bool AreSymbolsInSegment(int row, int startCol, int endCol)
+    private List<SymbolLocation> FindSymbolsInSegment(int row, int startCol, int endCol)
     {
       startCol = SafeColumnToLeft(startCol);
       endCol = SafeColumnToRight(endCol);
 
+      var symbols = new List<SymbolLocation>();
       for (var col = startCol; col <= endCol; col++)
       {
-        if (IsSymbol(row, col))
-        {
-          return true;
-        }
+        symbols.Add(new SymbolLocation(row, col, _matrix[row, col]));
       }
 
-      return false;
+      return symbols;
     }
 
     private static int SafeColumnToLeft(int col)
@@ -159,26 +154,16 @@
       return col == Cols - 1 ? Cols - 1 : col + 1;
     }
 
-    private bool IsSymbol(int row, int col)
-    {
-      var c = _matrix[row, col];
-      if (c != '.' && !char.IsDigit(c))
-      {
-        return true;
-      }
-      return false;
-    }
-
-    private bool AreSymbolsBeside(PartNumberLocation location)
+    private List<SymbolLocation> FindSymbolsBeside(PartNumberLocation location)
     {
       var leftCol = SafeColumnToLeft(location.StartCol);
       var rightCol = SafeColumnToRight(location.EndCol);
-
-      if (IsSymbol(location.Row, leftCol) || IsSymbol(location.Row, rightCol))
+      var symbols = new List<SymbolLocation>
       {
-        return true;
-      }
-      return false;
+        new SymbolLocation(location.Row, leftCol, _matrix[location.Row, leftCol]),
+        new SymbolLocation(location.Row, rightCol, _matrix[location.Row, rightCol])
+      };
+      return symbols;
     }
 
     private void SetElements(Func<int, int, char> elementSource)

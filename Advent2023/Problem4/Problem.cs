@@ -1,4 +1,6 @@
 using Advent2023;
+using Advent2023.Problem4;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Problem4;
 
@@ -15,29 +17,50 @@ public class Problem : IProblem
   {
     var lines = await File.ReadAllLinesAsync(_filename);
 
-    var sum = 0;
+    var cards = new List<Card>();
     foreach (var line in lines)
     {
-      var score = CalculateCardScore(line);
-      sum += score;
+      var card = CalculateCard(line);
+      cards.Add(card);
     }
 
+    UpdateCopies(cards);
+
+    var sum = cards.Sum(x => x.Score);
     Console.WriteLine($"Sum of scores: {sum}");
+
+    var countCards = cards.Sum(x => x.Count);
+    Console.WriteLine($"Count of cards: {countCards}");
   }
 
-  private static int CalculateCardScore(string cardDescription)
+  private static void UpdateCopies(List<Card> cards)
   {
-    (var winningNumbersDescription, var chosenNumbersDescription) = GetNumbersDescriptions(cardDescription);
+    foreach (var card in cards)
+    {
+      var numNextCards = card.NumMatches;
+      var startIndex = card.Id;
+
+      for (var i = 0; i < numNextCards; i++)
+      {
+        cards[startIndex + i].Count += card.Count;
+      }
+    }
+  }
+
+  private static Card CalculateCard(string cardDescription)
+  {
+    (var cardId, var winningNumbersDescription, var chosenNumbersDescription) = GetCardDetails(cardDescription);
 
     var winningNumbers = GetNumbers(winningNumbersDescription);
     var chosenNumbers = GetNumbers(chosenNumbersDescription);
 
     var numMatches = CalcNumMatches(winningNumbers, chosenNumbers);
+    var score = CalcScore(numMatches);
 
-    return CalculateScore(numMatches);
+    return new Card(cardId, numMatches, score);
   }
 
-  private static (string, string) GetNumbersDescriptions(string cardDescription)
+  private static (int, string, string) GetCardDetails(string cardDescription)
   {
     var splitColon = cardDescription.Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     if (splitColon.Length != 2)
@@ -45,10 +68,17 @@ public class Problem : IProblem
       throw new InvalidDataException("Unexpected format, ':' not found.");
     }
 
+    var splitSpace = splitColon[0].Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    if (splitSpace.Length != 2)
+    {
+      throw new InvalidDataException("Unexpected format, ' ' not found.");
+    }
+    var cardId = int.Parse(splitSpace[1]);
+
     var splitPipe = splitColon[1].Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     return splitPipe.Length != 2
       ? throw new InvalidDataException("Unexpected format, ':' not found.")
-      : (splitPipe[0], splitPipe[1]);
+      : (cardId, splitPipe[0], splitPipe[1]);
   }
 
   private static List<int> GetNumbers(string numbersDescription)
@@ -77,7 +107,7 @@ public class Problem : IProblem
     return chosenNumbers.Intersect(winningNumbers).Count();
   }
 
-  private static int CalculateScore(int numMatches)
+  private static int CalcScore(int numMatches)
   {
     if (numMatches <= 0)
     {

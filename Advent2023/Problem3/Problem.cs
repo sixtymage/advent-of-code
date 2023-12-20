@@ -1,7 +1,4 @@
-using Advent2023;
-using Advent2023.Problem3;
-
-namespace Problem3;
+namespace Advent2023.Problem3;
 
 public class Problem : IProblem
 {

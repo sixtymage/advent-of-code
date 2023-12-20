@@ -1,8 +1,4 @@
-using Advent2023;
-using Advent2023.Problem4;
-using static System.Formats.Asn1.AsnWriter;
-
-namespace Problem4;
+namespace Advent2023.Problem4;
 
 public class Problem : IProblem
 {

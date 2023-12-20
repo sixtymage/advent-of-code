@@ -1,2 +1,3 @@
-﻿var p = new Problem4.Problem();
+﻿
+var p = new Advent2023.Problem4.Problem();
 await p.SolveAsync();

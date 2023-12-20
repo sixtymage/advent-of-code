@@ -1,4 +1,3 @@
-
 namespace Advent2023.Problem5;
 
 public class Problem : IProblem
@@ -15,13 +14,15 @@ public class Problem : IProblem
     var lines = await File.ReadAllLinesAsync(_filename);
 
     var input = ReadInput(lines);
-    var locations = LocateSeeds(input);
 
-    var lowest = locations.Min();
-    Console.WriteLine($"Lowest seed location is {lowest}");
+    var singleLocations = LocateSingleSeeds(input);
+    Console.WriteLine($"Lowest single seed location is {singleLocations.Min()}");
+
+    var rangedLocations = await LocateLowestLocationForSeedRangesAsync(input);
+    Console.WriteLine($"Lowest ranged seed location is {rangedLocations.Min()}");
   }
 
-  private List<long> LocateSeeds(Input input)
+  private static List<long> LocateSingleSeeds(Input input)
   {
     var locations = new List<long>();
     foreach (var seed in input.Seeds)
@@ -34,6 +35,64 @@ public class Problem : IProblem
       locations.Add(destination);
     }
     return locations;
+  }
+
+  private static async Task<List<long>> LocateLowestLocationForSeedRangesAsync(Input input)
+  {
+    var tasks = AllocateTasks(input);
+    await Task.WhenAll(tasks);
+
+    return tasks
+      .Select(x => x.Result)
+      .ToList();
+  }
+
+  private static List<Task<long>> AllocateTasks(Input input)
+  {
+    if (input.Seeds.Count % 2 != 0)
+    {
+      throw new InvalidDataException("Invalid seed data, locating many seeds requires pairs of numbers.");
+    }
+
+    var tasks = new List<Task<long>>();
+
+    for (var i = 0; i < input.Seeds.Count; i += 2)
+    {
+      var startSeed = input.Seeds[i];
+      var count = input.Seeds[i + 1];
+      var batchId = i / 2 + 1;
+
+      var task = Task.Run(() => LocateLowestLocationForSeedRange(batchId, input.Maps, startSeed, count));
+      tasks.Add(task);
+    }
+
+    return tasks;
+  }
+
+  private static long LocateLowestLocationForSeedRange(int batchId, List<RangedMap> maps, long startSeed, long count)
+  {
+    Console.WriteLine($"Commencing check of {count} seeds (Batch {batchId}).");
+
+    var lowestLocation = long.MaxValue;
+    for (var seed = startSeed; seed < startSeed + count; seed++)
+    {
+      var destination = Lookup(maps, seed);
+
+      lowestLocation = destination < lowestLocation ? destination : lowestLocation;
+    }
+
+    Console.WriteLine($"Batch {batchId} complete, lowest location was {lowestLocation}.");
+    return lowestLocation;
+  }
+
+  private static long Lookup(List<RangedMap> maps, long seed)
+  {
+    var destination = seed;
+    foreach (var map in maps)
+    {
+      destination = map.Lookup(destination);
+    }
+    return destination;
   }
 
   private static Input ReadInput(string[] lines)

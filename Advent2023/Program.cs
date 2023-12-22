@@ -1,2 +1,2 @@
-﻿var p = new Advent2023.Problem6.Problem(handleKerning: true);
+﻿var p = new Advent2023.Problem7.Problem();
 await p.SolveAsync();

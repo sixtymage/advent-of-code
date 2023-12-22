@@ -2,6 +2,7 @@
 {
   enum Rank
   {
+    Joker,
     Two,
     Three,
     Four,

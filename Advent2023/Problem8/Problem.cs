@@ -1,5 +1,4 @@
 
-
 namespace Advent2023.Problem8;
 
 public class Problem : IProblem
@@ -29,38 +28,114 @@ public class Problem : IProblem
   private static long SolveManyPaths(Instructions instructions, Map map)
   {
     var nodes = map.FindStartNodes();
-    long numMoves = 0;
 
+    var cycleLengths = new int[nodes.Count];
+    for (int i = 0; i< nodes.Count; i++)
+    {
+      cycleLengths[i] = FindCycleLength(instructions, map, nodes[i]);
+    }
+
+    return FindLeastCommonDivisor(cycleLengths);
+  }
+
+  private static int FindCycleLength(Instructions instructions, Map map, MapNode node)
+  {
+    var pathLengths = new List<int>();
+
+    int numSteps = 0;
     while (true)
     {
-      if (map.AreAllEndNodes(nodes))
+      if (node.IsEndNode())
       {
-        break;
+        pathLengths.Add(numSteps);
+
+        if (ContainsRepeatSequence(pathLengths))
+        {
+          var sequenceRange = pathLengths[0..(pathLengths.Count/2)];
+          return sequenceRange.Sum();
+        }
+
+        numSteps = 0;
       }
 
       var direction = instructions.GetNextMove();
-      nodes = MoveNextNodes(map, nodes, direction);
-      numMoves++;
+      var nextId = node.GetNextNode(direction);
+      node = map.FindMapNode(nextId);
+      numSteps++;
+    }
+  }
 
-      if (numMoves % 10000000 == 0)
+  private static bool ContainsRepeatSequence(List<int> list)
+  {
+    if (list.Count % 2 == 1)
+    {
+      return false;
+    }
+
+    var left = list[0..(list.Count/2)];
+    var right = list[(list.Count/2)..];
+
+    for(var i=0; i<left.Count; i++)
+    {
+      if (left[i] != right[i])
       {
-        Console.WriteLine($"Made {numMoves:#,0} moves, still looking for the exit...");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static long FindLeastCommonDivisor(ReadOnlySpan<int> values)
+  {
+    ArgumentOutOfRangeException.ThrowIfLessThan(values.Length, 2);
+
+    return values.Length == 2
+      ? FindLeastCommonDivisor(values[0], values[1])
+      : FindLeastCommonDivisor(values[0], FindLeastCommonDivisor(values[1..]));
+  }
+
+  private static long FindLeastCommonDivisor(long n, long m)
+  {
+    var gcd = FindGreatestCommonDivisor(n, m);
+    return n / gcd * m;
+  }
+
+  private static long FindGreatestCommonDivisor(long n, long m)
+  {
+    ArgumentOutOfRangeException.ThrowIfZero(n);
+    ArgumentOutOfRangeException.ThrowIfZero(m);
+
+    var smaller = n < m ? n : m;
+    var larger = n > m ? n : m;
+    
+    if (larger % smaller == 0)
+    {
+      return larger;
+    }
+
+    // check for factors up to the square root of the smaller number
+    var searchMax = (long)Math.Sqrt(smaller);
+
+    for (var p = searchMax; p > 1; p--)
+    {
+      if (smaller % p == 0)
+      {
+        // if this factor also divides the large number, we're done
+        if (larger % p == 0)
+        {
+          return p;
+        }
+
+        // check if the pair of this factor divides the larger number
+        var q = smaller / p;
+        if (larger % q == 0)
+        {
+          return q;
+        }
       }
     }
 
-    return numMoves;
-  }
-
-  private static List<MapNode> MoveNextNodes(Map map, List<MapNode> nodes, Direction direction)
-  {
-    var nextNodes = new List<MapNode>();
-    foreach (var node in nodes)
-    {
-      var nextId = node.GetNextNode(direction);
-      var nextNode = map.FindMapNode(nextId);
-      nextNodes.Add(nextNode);
-    }
-    return nextNodes;
+    return 1;
   }
 
   private static long SolveSinglePath(Instructions instructions, Map map)

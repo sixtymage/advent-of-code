@@ -28,13 +28,8 @@
     public List<MapNode> FindStartNodes()
     {
       return _mapNodes.Values
-        .Where(node => node.Id.EndsWith('A'))
+        .Where(x => x.IsStartNode())
         .ToList();
-    }
-
-    public bool AreAllEndNodes(List<MapNode> nodes)
-    {
-      return nodes.All(node => node.Id.EndsWith('Z'));
     }
 
     private static MapNode RecoverMapNode(string line)

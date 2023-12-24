@@ -1,9 +1,9 @@
 ﻿namespace Advent2023.Problem8
 {
-  internal class Instructions(List<Direction> moves)
+  internal class Instructions(Direction[] moves)
   {
-    private readonly List<Direction> _moves = moves;
-    private int _index = moves.Count - 1;
+    private readonly Direction[] _moves = moves;
+    private int _index = moves.Length - 1;
 
     public static Instructions FromDescription(string description)
     {
@@ -14,9 +14,9 @@
           'R' => Direction.Right,
           var x => throw new Exception($"Unsupported direction '{x}', only permitted directions are 'L' and 'R'"),
         })
-        .ToList();
+        .ToArray();
 
-      if (moves.Count == 0)
+      if (moves.Length == 0)
       {
         throw new Exception("Unsupported list of moves, at least one move must be specified");
       }
@@ -25,7 +25,7 @@
 
     public Direction GetNextMove()
     {
-      _index = _index == _moves.Count - 1 ? 0 : _index + 1;
+      _index = _index == _moves.Length - 1 ? 0 : _index + 1;
       return _moves[_index];
     }
   }

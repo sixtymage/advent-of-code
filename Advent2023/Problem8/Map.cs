@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Advent2023.Problem8
+﻿namespace Advent2023.Problem8
 {
   internal class Map
   {
@@ -25,6 +23,18 @@ namespace Advent2023.Problem8
     public MapNode FindMapNode(string id)
     {
       return _mapNodes[id];
+    }
+
+    public List<MapNode> FindStartNodes()
+    {
+      return _mapNodes.Values
+        .Where(node => node.Id.EndsWith('A'))
+        .ToList();
+    }
+
+    public bool AreAllEndNodes(List<MapNode> nodes)
+    {
+      return nodes.All(node => node.Id.EndsWith('Z'));
     }
 
     private static MapNode RecoverMapNode(string line)

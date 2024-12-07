@@ -1,5 +1,4 @@
-﻿
-namespace Advent2024;
+﻿namespace Advent2024;
 
 internal static class Program
 {
@@ -32,6 +31,7 @@ internal static class Program
     return problemId switch
     {
       1 => new Problem1.Problem(),
+      2 => new Problem2.Problem(),
       _ => new NullProblem()
     };
   }

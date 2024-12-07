@@ -1,37 +1,58 @@
-using System.Text;
-
 namespace Advent2024.Problem3;
 
 public class StateData
 {
-  public State State { get; init; }
+  private const string DoInstruction = "do()";
+  private const string DontInstruction = "don't()";
 
-  private readonly List<char> _instruction;
+  public State State { get;  }
+
+  private readonly List<char> _mulInstruction;
+  private readonly List<char> _nonMulInstruction;
   private readonly List<char> _firstNumberDigits;
   private readonly List<char> _secondNumberDigits;
 
-  public StateData(State state)
+  public StateData()
   {
-    State = state;
-    _instruction = [];
+    State = State.ExpectingM;
+    _mulInstruction = [];
+    _nonMulInstruction = [];
     _firstNumberDigits = [];
     _secondNumberDigits = [];
   }
 
-  public StateData(State state, char initialChar)
+  public StateData(State state, char? mulInstructionChar, char? nonMulInstructionChar)
   {
     State = state;
-    _instruction = [initialChar];
+    _mulInstruction = mulInstructionChar is not null ? [mulInstructionChar.Value] : [];
+    _nonMulInstruction = nonMulInstructionChar is not null ? [nonMulInstructionChar.Value] : [];
     _firstNumberDigits = [];
     _secondNumberDigits = [];
   }
 
-  private StateData(StateData from, State state)
+  private StateData(
+    State state,
+    List<char>? mulInstruction,
+    List<char>? nonMulInstruction,
+    List<char>? firstNumberDigits,
+    List<char>? secondNumberDigits,
+    char? mulInstructionChar,
+    char? nonMulInstructionChar,
+    char? firstNumberDigitsChar,
+    char? secondNumberDigitsChar)
   {
     State = state;
-    _instruction = [..from._instruction];
-    _firstNumberDigits = [..from._firstNumberDigits];
-    _secondNumberDigits = [..from._secondNumberDigits];
+    _mulInstruction = ToList(mulInstruction, mulInstructionChar);
+    _nonMulInstruction = ToList(nonMulInstruction, nonMulInstructionChar);
+    _firstNumberDigits = ToList(firstNumberDigits, firstNumberDigitsChar);
+    _secondNumberDigits = ToList(secondNumberDigits, secondNumberDigitsChar);
+  }
+
+  private static List<char> ToList(List<char>? list, char? character)
+  {
+    return character is not null
+      ? [..list ?? [], character.Value]
+      : [..list ?? []];
   }
 
   public Instruction RenderInstruction()
@@ -56,29 +77,36 @@ public class StateData
     return _secondNumberDigits.Count;
   }
 
-  public StateData AddExpectedCharacter(char character, State nextState)
+  public bool IsDoInstruction()
   {
-    var stateData = new StateData(this, nextState);
-    stateData._instruction.Add(character);
-    return stateData;
+    var lastChars = string.Join("", _nonMulInstruction.TakeLast(4));
+    return lastChars == DoInstruction;
+  }
+
+  public bool IsDontInstruction()
+  {
+    var lastChars = string.Join("", _nonMulInstruction.TakeLast(7));
+    return lastChars == DontInstruction;
+  }
+
+  public StateData AddMulInstructionCharacter(char character, State nextState)
+  {
+    return new StateData(nextState, _mulInstruction, null, _firstNumberDigits, _secondNumberDigits, character, null, null, null);
   }
 
   public StateData AddFirstNumberDigit(char character, State nextState)
   {
-    var stateData = new StateData(this, nextState);
-    stateData._instruction.Add(character);
-    stateData._firstNumberDigits.Add(character);
-
-    return stateData;
+    return new StateData(nextState, _mulInstruction, null, _firstNumberDigits, _secondNumberDigits, character, null, character, null);
   }
 
   public StateData AddSecondNumberDigit(char character, State nextState)
   {
-    var stateData = new StateData(this, nextState);
-    stateData._instruction.Add(character);
-    stateData._secondNumberDigits.Add(character);
+    return new StateData(nextState, _mulInstruction, null, _firstNumberDigits, _secondNumberDigits, character, null, null, character);
+  }
 
-    return stateData;
+  public StateData AddNonMulInstructionChar(char character)
+  {
+    return new StateData(State, null, _nonMulInstruction, null, null, null, character, null, null);
   }
 
   private static int ParseNumber(List<char> digits)

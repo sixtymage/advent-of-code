@@ -4,24 +4,68 @@ public class StateMachineInstructionExtractor : IInstructionExtractor
 {
   private const char Comma = ',';
   private const char CloseParenthesis = ')';
-  private const char EmptyChar = ' ';
   private const char StartChar = 'm';
 
   public List<Instruction> ExtractInstructions(string input)
   {
     List<Instruction> instructions = [];
+    var instructionsEnabled = true;
 
-    var stateData = InitialStateData();
+    var stateData = new StateData();
     foreach (var character in input)
     {
       stateData = Transition(stateData, character);
-      if (stateData.State == State.InstructionFound)
-      {
-        instructions.Add(stateData.RenderInstruction());
-      }
+      HandleStateActions(stateData, instructions, ref instructionsEnabled);
     }
 
     return instructions;
+  }
+
+  private static void HandleStateActions(StateData stateData, List<Instruction> instructions, ref bool enableInstructions)
+  {
+    switch (stateData.State)
+    {
+      case State.InstructionFound:
+        HandleInstructionFound(stateData, instructions, enableInstructions);
+        break;
+
+      case State.ExpectingM:
+        CheckForActivationInstructions(stateData, ref enableInstructions);
+        break;
+
+      case State.ExpectingU:
+      case State.ExpectingL:
+      case State.ExpectingOpenParenthesis:
+      case State.ExpectingFirstNumberDigit:
+      case State.ExpectingFirstNumberDigitOrComma:
+      case State.ExpectingComma:
+      case State.ExpectingSecondNumberDigit:
+      case State.ExpectingSecondNumberDigitOrCloseParenthesis:
+      case State.ExpectingCloseParenthesis:
+      default:
+        break;
+    }
+  }
+
+  private static void HandleInstructionFound(StateData stateData, List<Instruction> instructions, bool instructionsEnabled)
+  {
+    if (instructionsEnabled)
+    {
+      instructions.Add(stateData.RenderInstruction());
+    }
+  }
+
+  private static void CheckForActivationInstructions(StateData stateData, ref bool instructionsEnabled)
+  {
+    if (stateData.IsDoInstruction())
+    {
+      instructionsEnabled = true;
+    }
+
+    if (stateData.IsDontInstruction())
+    {
+      instructionsEnabled = false;
+    }
   }
 
   private static StateData Transition(StateData stateData, char character)
@@ -45,22 +89,24 @@ public class StateMachineInstructionExtractor : IInstructionExtractor
 
   private static StateData HandleExpectingM(StateData stateData, char character)
   {
-    return HandleExpectedChar(stateData, character, 'm', State.ExpectingU);
+    return character == StartChar
+      ? HandleExpectedInstructionChar(stateData, character, 'm', State.ExpectingU)
+      : HandleNonInstructionChar(stateData, character);
   }
 
   private static StateData HandleExpectingU(StateData stateData, char character)
   {
-    return HandleExpectedChar(stateData, character, 'u', State.ExpectingL);
+    return HandleExpectedInstructionChar(stateData, character, 'u', State.ExpectingL);
   }
 
   private static StateData HandleExpectingL(StateData stateData, char character)
   {
-    return HandleExpectedChar(stateData, character, 'l', State.ExpectingOpenParenthesis);
+    return HandleExpectedInstructionChar(stateData, character, 'l', State.ExpectingOpenParenthesis);
   }
 
   private static StateData HandleExpectingOpenParenthesis(StateData stateData, char character)
   {
-    return HandleExpectedChar(stateData, character, '(', State.ExpectingFirstNumberDigit);
+    return HandleExpectedInstructionChar(stateData, character, '(', State.ExpectingFirstNumberDigit);
   }
 
   private static StateData HandleExpectingFirstNumberDigit(StateData stateData, char character)
@@ -87,7 +133,7 @@ public class StateMachineInstructionExtractor : IInstructionExtractor
   private static StateData HandleExpectingComma(StateData stateData, char character)
   {
     return character == Comma
-      ? stateData.AddExpectedCharacter(Comma, State.ExpectingSecondNumberDigit)
+      ? stateData.AddMulInstructionCharacter(Comma, State.ExpectingSecondNumberDigit)
       : InitialStateData(character);
   }
 
@@ -115,7 +161,7 @@ public class StateMachineInstructionExtractor : IInstructionExtractor
   private static StateData HandleExpectingCloseParenthesis(StateData stateData, char character)
   {
     return character == CloseParenthesis
-      ? stateData.AddExpectedCharacter(CloseParenthesis, State.InstructionFound)
+      ? stateData.AddMulInstructionCharacter(CloseParenthesis, State.InstructionFound)
       : InitialStateData(character);
   }
 
@@ -124,7 +170,7 @@ public class StateMachineInstructionExtractor : IInstructionExtractor
     return InitialStateData(character);
   }
 
-  private static StateData HandleExpectedChar(
+  private static StateData HandleExpectedInstructionChar(
     StateData stateData,
     char character,
     char expectedCharacter,
@@ -132,13 +178,18 @@ public class StateMachineInstructionExtractor : IInstructionExtractor
   {
     return character != expectedCharacter
       ? InitialStateData(character)
-      : stateData.AddExpectedCharacter(character, nextState);
+      : stateData.AddMulInstructionCharacter(character, nextState);
   }
 
-  private static StateData InitialStateData(char character = EmptyChar)
+  private static StateData HandleNonInstructionChar(StateData stateData, char character)
+  {
+    return stateData.AddNonMulInstructionChar(character);
+  }
+
+  private static StateData InitialStateData(char character)
   {
     return character == StartChar
-      ? new StateData(State.ExpectingU, StartChar)
-      : new StateData(State.ExpectingM);
+      ? new StateData(State.ExpectingU, StartChar, null)
+      : new StateData(State.ExpectingM, null, character);
   }
 }

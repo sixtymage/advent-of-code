@@ -6,26 +6,16 @@ public class Problem(string filename = @"data\problem3-input.txt") : IProblem
   {
     var input = await File.ReadAllTextAsync(filename);
 
-    var validInstructions = ExtractValidInstructions(input);
-    var parsedInstructions = ParseInstructions(validInstructions);
-
-    var total = CalculateTotal(parsedInstructions);
+    var extractor = new StateMachineInstructionExtractor();
+    var instructions = extractor.ExtractInstructions(input);
+    var total = CalculateTotal(instructions);
 
     Console.WriteLine($"Sum of mul instructions is: {total}");
   }
 
-  private static List<string> ExtractValidInstructions(string input)
-  {
-    throw new NotImplementedException();
-  }
-
-  private static List<Instruction> ParseInstructions(List<string> validInstructions)
-  {
-    throw new NotImplementedException();
-  }
-
   private static long CalculateTotal(List<Instruction> parsedInstructions)
   {
-    throw new NotImplementedException();
+    return parsedInstructions
+      .Aggregate<Instruction?, long>(0, (total, pi) => pi == null ? total : total + pi.Left * pi.Right);
   }
 }

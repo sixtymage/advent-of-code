@@ -11,28 +11,20 @@ public class Problem(string filename = @"data\problem4-input.txt") : IProblem
 
     var matrix = CreateMatrix(lines);
 
-    //SolvePart1(matrix);
+    SolvePart1(matrix);
     SolvePart2(matrix);
   }
 
   private static void SolvePart2(Matrix<char> matrix)
   {
-    // create all the unique boxes of size 3
     var boxes = matrix.GetAllBoxes(SearchWord2.Length);
 
-    // get the \ and / diagonals for each box as segments
-    var total = 0;
-    foreach (var box in boxes)
-    {
-      var count = CheckSegment(box.GetDiagonalForwardSegment(), SearchWord2) +
-                  CheckSegment(box.GetDiagonalBackwardSegment(), SearchWord2);
-      if (count == 2)
-      {
-        total++;
-      }
-    }
+    var numBoxes = boxes.Select(
+      box => CheckSegment(box.GetDiagonalForwardSegment(), SearchWord2) + 
+             CheckSegment(box.GetDiagonalBackwardSegment(), SearchWord2))
+      .Count(numHits => numHits == 2);
 
-    Console.WriteLine($"Total number of {SearchWord1} words is: {total}");
+    Console.WriteLine($"Total number of X-{SearchWord2} boxes is: {numBoxes}");
   }
 
   private static void SolvePart1(Matrix<char> matrix)

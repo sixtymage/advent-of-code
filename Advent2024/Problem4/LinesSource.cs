@@ -1,8 +1,12 @@
 namespace Advent2024.Problem4;
 
-public class LinesDataSource(string[] lines) : IMatrixDataSource<char>
+public class LinesSource(string[] lines) : IMatrixSource<char>
 {
   private readonly string[] _lines = VerifyLines(lines);
+
+  public int StartRow => 0;
+
+  public int StartCol => 0;
 
   public int Rows => _lines.Length;
 

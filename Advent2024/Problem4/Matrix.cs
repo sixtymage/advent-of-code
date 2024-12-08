@@ -50,6 +50,29 @@ public class Matrix<T>(IMatrixSource<T> source) : IMatrixSource<T>
     return segments;
   }
 
+  public List<Matrix<T>> GetAllBoxes(int length)
+  {
+    var row = 0;
+    var maxRow = Rows - length;
+    var maxCol = Cols - length;
+
+    var boxes = new List<Matrix<T>>();
+    while (row <= maxRow)
+    {
+      var col = 0;
+      while (col <= maxCol)
+      {
+        var box = GetSubMatrix(row, col, length);
+        boxes.Add(box);
+        col++;
+      }
+
+      row++;
+    }
+
+    return boxes;
+  }
+
   private static void AddUniqueSegments(List<Segment<T>> segments, List<Segment<T>> candidateSegments)
   {
     foreach (var candidateSegment in candidateSegments.Where(candidateSegment => !segments.Contains(candidateSegment)))
@@ -110,7 +133,7 @@ public class Matrix<T>(IMatrixSource<T> source) : IMatrixSource<T>
     return segments;
   }
 
-  private Segment<T> GetDiagonalForwardSegment()
+  public Segment<T> GetDiagonalForwardSegment()
   {
     Debug.Assert(Cols == Rows);
     var length = Rows;
@@ -126,7 +149,7 @@ public class Matrix<T>(IMatrixSource<T> source) : IMatrixSource<T>
     return segment;
   }
 
-  private Segment<T> GetDiagonalBackwardSegment()
+  public Segment<T> GetDiagonalBackwardSegment()
   {
     Debug.Assert(Cols == Rows);
     var length = Rows;

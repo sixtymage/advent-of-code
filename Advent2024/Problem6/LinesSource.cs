@@ -1,4 +1,4 @@
-namespace Advent2024.Problem4;
+namespace Advent2024.Problem6;
 
 public class LinesSource(string[] lines) : IMatrixSource<char>
 {

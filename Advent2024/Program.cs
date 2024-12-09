@@ -35,6 +35,7 @@ internal static class Program
       3 => new Problem3.Problem(),
       4 => new Problem4.Problem(),
       5 => new Problem5.Problem(),
+      6 => new Problem6.Problem(),
       _ => new NullProblem()
     };
   }

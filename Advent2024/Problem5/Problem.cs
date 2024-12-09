@@ -7,9 +7,60 @@ public class Problem(string filename = @"data\problem5-input.txt") : IProblem
     var lines = await File.ReadAllLinesAsync(filename);
     var (rules, updates) = ExtractRulesAndUpdates(lines);
 
+    SolvePart1(rules, updates);
+    SolvePart2(rules, updates);
+  }
+
+  private static void SolvePart2(PageOrderingRule[] rules, ManualUpdate[] updates)
+  {
+    var correctlyOrderedUpdates = FindAndCorrectIncorrectlyOrderedUpdates(rules, updates);
+    var middlePageSum = CalculateMiddlePageSum(correctlyOrderedUpdates);
+    Console.WriteLine($"Middle page sum (Part 2): {middlePageSum}");
+  }
+
+  private static List<ManualUpdate> FindAndCorrectIncorrectlyOrderedUpdates(PageOrderingRule[] rules, ManualUpdate[] updates)
+  {
+    var correctlyOrderedUpdates = new List<ManualUpdate>();
+    foreach (var update in updates)
+    {
+      var applicableRules = FindApplicableRules(rules, update).ToArray();
+      if (AreRulesSatisfied(applicableRules, update))
+      {
+        continue;
+      }
+
+      var correctlyOrderedUpdate = CorrectUpdate(applicableRules, update);
+      correctlyOrderedUpdates.Add(correctlyOrderedUpdate);
+    }
+
+    return correctlyOrderedUpdates;
+  }
+
+  private static ManualUpdate CorrectUpdate(PageOrderingRule[] rules, ManualUpdate incorrectlyOrderedUpdate)
+  {
+    while (true)
+    {
+      var violatedRule = FindViolatedRule(rules, incorrectlyOrderedUpdate);
+      if (violatedRule is null)
+      {
+        return incorrectlyOrderedUpdate;
+      }
+
+      var candidateReorderedPages = violatedRule.GetCandidateCorrection(incorrectlyOrderedUpdate.Pages);
+      incorrectlyOrderedUpdate = new ManualUpdate(candidateReorderedPages);
+    }
+  }
+
+  private static PageOrderingRule? FindViolatedRule(PageOrderingRule[] rules, ManualUpdate update)
+  {
+    return rules.FirstOrDefault(rule => !rule.IsSatisfied(update.Pages));
+  }
+
+  private static void SolvePart1(PageOrderingRule[] rules, ManualUpdate[] updates)
+  {
     var correctlyOrderedUpdates = FindCorrectlyOrderedUpdates(rules, updates);
     var middlePageSum = CalculateMiddlePageSum(correctlyOrderedUpdates);
-    Console.WriteLine($"Middle page sum: {middlePageSum}");
+    Console.WriteLine($"Middle page sum (Part 1): {middlePageSum}");
   }
 
   private static (PageOrderingRule[] rules, ManualUpdate[] updates) ExtractRulesAndUpdates(string[] lines)
@@ -54,20 +105,20 @@ public class Problem(string filename = @"data\problem5-input.txt") : IProblem
 
   private static List<ManualUpdate> FindCorrectlyOrderedUpdates(PageOrderingRule[] rules, ManualUpdate[] updates)
   {
-    var orderedUpdates = new List<ManualUpdate>();
+    var correctlyOrderedUpdates = new List<ManualUpdate>();
     foreach (var update in updates)
     {
-      var applicableRules = FindApplicableRules(rules, update);
+      var applicableRules = FindApplicableRules(rules, update).ToArray();
       if (AreRulesSatisfied(applicableRules, update))
       {
-        orderedUpdates.Add(update);
+        correctlyOrderedUpdates.Add(update);
       }
     }
 
-    return orderedUpdates;
+    return correctlyOrderedUpdates;
   }
 
-  private static bool AreRulesSatisfied(IEnumerable<PageOrderingRule> applicableRules, ManualUpdate update)
+  private static bool AreRulesSatisfied(PageOrderingRule[] applicableRules, ManualUpdate update)
   {
     return applicableRules.All(x => x.IsSatisfied(update.Pages));
   }

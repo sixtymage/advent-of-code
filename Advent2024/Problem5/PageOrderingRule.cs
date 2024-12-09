@@ -29,4 +29,13 @@ public class PageOrderingRule(int before, int after)
 
     return false;
   }
+
+  public int[] GetCandidateCorrection(int[] pages)
+  {
+    var indexedPages = pages.Index().ToArray();
+    var beforeIndex = indexedPages.First(ip => ip.Item == before).Index;
+    var afterIndex = indexedPages.First(ip => ip.Item == after).Index;
+    (indexedPages[beforeIndex], indexedPages[afterIndex]) = (indexedPages[afterIndex], indexedPages[beforeIndex]);
+    return indexedPages.Select(x => x.Item).ToArray();
+  }
 }

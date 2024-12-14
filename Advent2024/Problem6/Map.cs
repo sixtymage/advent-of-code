@@ -2,9 +2,13 @@ namespace Advent2024.Problem6;
 
 public class Map(Matrix<char> matrix)
 {
-  private const char Obstacle = '#';
-  private const char EmptyLocation = '.';
-  private const char NewObstacle = 'O';
+  public const char Obstacle = '#';
+  public const char EmptyLocation = '.';
+  public const char NewObstacle = 'O';
+  public const char Up = '^';
+  public const char Right = '>';
+  public const char Down = 'v';
+  public const char Left = '<';
 
   public bool IsOnMap(Location location)
   {
@@ -26,7 +30,7 @@ public class Map(Matrix<char> matrix)
     matrix[location.Row, location.Col] = Obstacle;
   }
   
-  public void SetEmptySquare(Location location)
+  public void SetEmptyLocation(Location location)
   {
     matrix[location.Row, location.Col] = EmptyLocation;
   }
@@ -39,10 +43,10 @@ public class Map(Matrix<char> matrix)
   {
     matrix[traversedLocation.Location.Row, traversedLocation.Location.Col] = traversedLocation.Direction switch
     {
-      Direction.North => '^',
-      Direction.East => '>',
-      Direction.South => 'v',
-      Direction.West => '<',
+      Direction.North => Up,
+      Direction.East => Right,
+      Direction.South => Down,
+      Direction.West => Left,
       _ => throw new InvalidOperationException()
     };
   }

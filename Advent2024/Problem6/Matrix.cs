@@ -17,6 +17,12 @@ public class Matrix<T>(IMatrixSource<T> source) : IMatrixSource<T>
   {
     return _data[row, col];
   }
+  
+   public T this[int row, int col]
+   {
+     get => _data[row, col];
+     set => _data[row, col] = value;
+   }
 
   private static T[,] FromSource(IMatrixSource<T> source)
   {

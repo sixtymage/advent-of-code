@@ -2,14 +2,17 @@ using System.Collections.ObjectModel;
 
 namespace Advent2024.Problem6;
 
-public class TraversedPath(Location initialLocation)
+public class TraversedPath(Location initialLocation, Direction initialDirection)
 {
-  private readonly List<Location> _path = [new(initialLocation)];
+  private readonly List<TraversedLocation> _path =
+  [
+    new(initialLocation, initialDirection)
+  ];
 
-  public IReadOnlyList<Location> Locations => new ReadOnlyCollection<Location>(_path);
+  public IReadOnlyList<TraversedLocation> TraversedLocations => new ReadOnlyCollection<TraversedLocation>(_path);
 
-  public void AddLocation(Location location)
+  public void AddLocation(Location location, Direction direction)
   {
-    _path.Add(new Location(location));
+    _path.Add(new TraversedLocation(location, direction));
   }
 }

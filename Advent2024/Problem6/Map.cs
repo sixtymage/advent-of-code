@@ -3,41 +3,53 @@ namespace Advent2024.Problem6;
 public class Map(Matrix<char> matrix)
 {
   private const char Obstacle = '#';
-
-  public TraversedPath Traverse(Guard guard)
-  {
-    var traversedPath = new TraversedPath(guard.Location, guard.Direction);
-
-    while (true)
-    {
-      while (IsDirectionBlocked(guard.Location, guard.Direction))
-      {
-        guard.TurnRight();
-      }
-
-      guard.StepForward();
-
-      if (!IsOnMap(guard.Location))
-      {
-        return traversedPath;
-      }
-      traversedPath.AddLocation(guard.Location, guard.Direction);
-    }
-  }
+  private const char EmptyLocation = '.';
+  private const char NewObstacle = 'O';
 
   public bool IsOnMap(Location location)
   {
     return location.Row >= 0 && location.Row < matrix.Rows && location.Col >= 0 && location.Col < matrix.Cols;
   }
 
-  public void AddObstacle(Location location)
+  public bool IsObstacle(Location location)
+  {
+    if (!IsOnMap(location))
+    {
+      return false;
+    }
+
+    return matrix[location.Row, location.Col] == Obstacle;
+  }
+
+  public void SetObstacle(Location location)
   {
     matrix[location.Row, location.Col] = Obstacle;
   }
-
-  public bool DoesGuardLoop(Guard guard)
+  
+  public void SetEmptySquare(Location location)
   {
-    var path = new TraversedPath(guard.Location, guard.Direction);
+    matrix[location.Row, location.Col] = EmptyLocation;
+  }
+  public void SetNewObstacle(Location location)
+  {
+    matrix[location.Row, location.Col] = NewObstacle;
+  }
+
+  public void SetGuardPath(TraversedLocation traversedLocation)
+  {
+    matrix[traversedLocation.Location.Row, traversedLocation.Location.Col] = traversedLocation.Direction switch
+    {
+      Direction.North => '^',
+      Direction.East => '>',
+      Direction.South => 'v',
+      Direction.West => '<',
+      _ => throw new InvalidOperationException()
+    };
+  }
+
+  public (bool, Path) DoesGuardLoop(Guard guard)
+  {
+    var path = new Path(guard.Location, guard.Direction);
     
     while (true)
     {
@@ -50,21 +62,21 @@ public class Map(Matrix<char> matrix)
 
       if (!IsOnMap(guard.Location))
       {
-        return false;
+        return (false, path);
       }
 
       if (IsLoop(guard, path))
       {
-        return true;
+        return (true, path);
       }
 
       path.AddLocation(guard.Location, guard.Direction);
     }
   }
 
-  private static bool IsLoop(Guard guard, TraversedPath traversedPath)
+  private static bool IsLoop(Guard guard, Path path)
   {
-    return traversedPath.TraversedLocations.Any(tl => tl == new TraversedLocation(guard.Location, guard.Direction));
+    return path.TraversedLocations.Any(tl => tl == new TraversedLocation(guard.Location, guard.Direction));
   }
 
   private bool IsDirectionBlocked(Location location, Direction direction)

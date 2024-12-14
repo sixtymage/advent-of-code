@@ -9,44 +9,105 @@ public class Problem(string filename = @"data\problem6-input.txt") : IProblem
     var lines = await File.ReadAllLinesAsync(filename);
     var matrix = ExtractInput(lines);
 
-    var guard = CreateGuard(matrix);
-    var map = CreateMap(matrix);
-    var traversedPath = map.Traverse(guard);
-    
-    SolvePart1(traversedPath);
-    SolvePart2(matrix, traversedPath);
+    Solve(matrix);
   }
 
-  private static void SolvePart2(Matrix<char> matrix, TraversedPath traversedPath)
+  private static void Solve(Matrix<char> matrix)
   {
-    var initialGuardLocation = CreateGuard(matrix).Location;
+    var guard = CreateGuard(matrix);
+    var initialGuardLocation = new Location(guard.Location);
+    var map = CreateMap(matrix, initialGuardLocation);
+
+    var path = new Path(guard.Location, guard.Direction);
+    var obstacles = new HashSet<Location>();
     
-    var numLocationsChecked = 0;
-    var matchingObstacles = new HashSet<Location>();
-    foreach (var traversedLocation in traversedPath.TraversedLocations)
+    while (true)
     {
-      var candidateObstacleLocation = traversedLocation.GetNextLocation();
-      
-      if (DoesObstacleCauseLoop(matrix, candidateObstacleLocation, traversedLocation, initialGuardLocation))
+      var nextLocation = guard.GetNextLocation();
+
+      if (!map.IsOnMap(nextLocation))
       {
-        if (!matchingObstacles.Add(candidateObstacleLocation))
+        break;
+      }
+
+      if (map.IsObstacle(nextLocation))
+      {
+        guard.TurnRight();
+        continue;
+      }
+
+      // we can consider this as a potential obstacle if we haven't collected it yet AND it isn't on the path already traversed
+      if (!obstacles.Contains(nextLocation) && !path.ContainsLocation(nextLocation))
+      {
+        var pathWithLoop = GetPathWithLoop(map, nextLocation, guard, initialGuardLocation); 
+        if (pathWithLoop != null)
         {
-          WriteLine($"Ignoring location {candidateObstacleLocation} as it has already been matched", ConsoleColor.Yellow);
-        }
-        else
-        {
-          WriteLine($"Found matching obstacle at {candidateObstacleLocation} (num matches = {matchingObstacles.Count})", ConsoleColor.Cyan);
+          obstacles.Add(nextLocation);
+          //WritePathWithLoop(nextLocation, matrix, pathWithLoop);
         }
       }
-      
-      numLocationsChecked++;
-      if (numLocationsChecked % 10 == 0)
+
+      guard.StepForward();
+      path.AddLocation(guard.Location, guard.Direction);
+
+      if (path.TraversedLocations.Count % 10 == 0)
       {
-        WriteLine($"Checked {numLocationsChecked}/{traversedPath.TraversedLocations.Count} locations", ConsoleColor.Gray);
+        WriteLine($"Traversed {path.TraversedLocations.Count} locations, obstacle count = {obstacles.Count}", ConsoleColor.Gray);
       }
     }
+
+    var numDistinctPositions = CalcNumDistinctPositions(path);
     
-    WriteLine($"Number of obstacles that cause looped guard behaviour: {matchingObstacles.Count}", ConsoleColor.White); 
+    WriteLine($"Number of distinct locations visited by the guard: {numDistinctPositions}", ConsoleColor.White);
+    WriteLine($"Number of obstacles that cause looped guard behaviour: {obstacles.Count}", ConsoleColor.White); 
+  }
+
+  private static void WritePathWithLoop(Location obstacleLocation, Matrix<char> matrix, Path pathWithLoop)
+  {
+    var matrixCopy = new Matrix<char>(matrix);
+    var map = new Map(matrixCopy);
+    
+    map.SetNewObstacle(obstacleLocation);
+    foreach (var traversedLocation in pathWithLoop.TraversedLocations)
+    {
+      map.SetGuardPath(traversedLocation);
+    }
+    
+    WriteLine($"Found matching obstacle at {obstacleLocation}", ConsoleColor.Cyan);
+    WriteMap(matrixCopy);
+  }
+
+  private static void WriteMap(Matrix<char> matrixCopy)
+  {
+    for (var row = 0; row < matrixCopy.Rows; row++)
+    {
+      for (var col = 0; col < matrixCopy.Cols; col++)
+      {
+        var colour = matrixCopy[row, col] switch
+        {
+          '.' => ConsoleColor.Gray,
+          '#' => ConsoleColor.Red,
+          'O' => ConsoleColor.White,
+          _ => ConsoleColor.Green,
+        };
+        Write(matrixCopy[row, col], colour);
+      }
+      Console.WriteLine();
+    }
+  }
+
+  private static void Write(char message, ConsoleColor colour)
+  {
+    var previousColour = Console.ForegroundColor;
+    try
+    {
+      Console.ForegroundColor = colour;
+      Console.Write(message);
+    }
+    finally
+    {
+      Console.ForegroundColor = previousColour;
+    }
   }
 
   private static void WriteLine(string message, ConsoleColor colour)
@@ -63,48 +124,44 @@ public class Problem(string filename = @"data\problem6-input.txt") : IProblem
     }
   }
 
-  private static bool DoesObstacleCauseLoop(
-    Matrix<char> matrix,
+  private static Path? GetPathWithLoop(
+    Map map,
     Location candidateObstacleLocation,
-    TraversedLocation guardLocation,
+    Guard guard,
     Location initialGuardLocation)
   {
     if (candidateObstacleLocation == initialGuardLocation)
     {
       WriteLine($"Ignoring location {candidateObstacleLocation} as it is the guard's initial location", ConsoleColor.Yellow);
-      return false;
+      return null;
     }
     
-    var copiedMatrix = CopyMatrix(matrix);
-    var map = CreateMap(copiedMatrix);
-
     if (!map.IsOnMap(candidateObstacleLocation))
     {
       WriteLine($"Ignoring location {candidateObstacleLocation} as it is off the map", ConsoleColor.Yellow);
-      return false;
+      return null;
     }
 
-    map.AddObstacle(candidateObstacleLocation);
+    map.SetObstacle(candidateObstacleLocation);
 
-    var guard = new Guard(guardLocation.Location, guardLocation.Direction);
-    return map.DoesGuardLoop(guard);
+    var phantomGuard = new Guard(guard);
+    try
+    {
+      var (doesLoop, path) = map.DoesGuardLoop(phantomGuard);
+
+      return doesLoop ? path : null;
+    }
+    finally
+    {
+      map.SetEmptySquare(candidateObstacleLocation);
+    }
   }
 
-  private static Matrix<char> CopyMatrix(Matrix<char> matrix)
+  private static Map CreateMap(Matrix<char> matrix, Location initialGuardLocation)
   {
-    var source = new SubMatrixSource<char>(0, 0, matrix.Rows, matrix);
-    return new Matrix<char>(source);
-  }
-
-  private static void SolvePart1(TraversedPath traversedPath)
-  {
-    var numDistinctPositions = CalcNumDistinctPositions(traversedPath);
-    WriteLine($"Number of distinct positions visited by the guard: {numDistinctPositions}", ConsoleColor.White);
-  }
-
-  private static Map CreateMap(Matrix<char> matrix)
-  {
-    return new Map(matrix);
+    var map = new Map(matrix);
+    map.SetEmptySquare(initialGuardLocation);
+    return map;
   }
 
   private static Guard CreateGuard(Matrix<char> matrix)
@@ -138,9 +195,9 @@ public class Problem(string filename = @"data\problem6-input.txt") : IProblem
     return new Matrix<char>(source);
   }
 
-  private static int CalcNumDistinctPositions(TraversedPath traversedPath)
+  private static int CalcNumDistinctPositions(Path path)
   {
-    return traversedPath.TraversedLocations
+    return path.TraversedLocations
       .Select(x => x.Location)
       .Distinct()
       .Count();

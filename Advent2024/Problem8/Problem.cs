@@ -7,10 +7,11 @@ public class Problem(string filename = @"data\problem8-input.txt") : IProblem
     var lines = await File.ReadAllLinesAsync(filename);
     var matrix = ExtractInput(lines);
 
-    Solve(matrix);
+    Solve(matrix, false);
+    Solve(matrix, true);
   }
 
-  private static void Solve(Matrix<char> matrix)
+  private static void Solve(Matrix<char> matrix, bool includeHarmonics)
   {
     // create the map
     var map = new Map(matrix);
@@ -27,17 +28,17 @@ public class Problem(string filename = @"data\problem8-input.txt") : IProblem
     var antiNodes = new List<Location>();
     foreach (var frequency in frequencies)
     {
-      FindAntiNodes(map, antennae, frequency, antiNodes);
+      FindAntiNodes(map, antennae, frequency, antiNodes, includeHarmonics);
     }
 
-    Console.WriteLine($"The number of anti-nodes is {antiNodes.Count}");
+    Console.WriteLine($"The number of anti-nodes is {antiNodes.Count} (harmonics={includeHarmonics})");
   }
 
-  private static void FindAntiNodes(
-    Map map,
+  private static void FindAntiNodes(Map map,
     Antenna[] antennae,
     char frequency,
-    List<Location> antiNodes)
+    List<Location> antiNodes,
+    bool includeHarmonics)
   {
     // get the antennae for this frequency
     var someAntennae = antennae.Where(a => a.Frequency == frequency).ToArray();
@@ -48,26 +49,53 @@ public class Problem(string filename = @"data\problem8-input.txt") : IProblem
     // iterate the pairs
     foreach (var pair in pairs)
     {
-      // calculating the anti-node positions
-      var (antiNode1, antiNode2) = FindAntiNodeLocation(pair.Item1, pair.Item2);
+      // calculate the anti-node positions
+      var candidateLocations = includeHarmonics
+        ? FindAntiNodeLocationsWithHarmonics(map, pair.Item1, pair.Item2)
+        : FindPrimaryAntiNodeLocationsOnly(pair.Item1, pair.Item2);
 
-      // if an anti-node location is on the map and not one already found, add it to the list
-      TryAdd(antiNode1, map, antiNodes);
-      TryAdd(antiNode2, map, antiNodes);
+      // capture on-map locations we haven't yet found
+      TryAdd(candidateLocations, map, antiNodes);
     }
   }
 
-  private static void TryAdd(Location candidateLocation, Map map, List<Location> antiNodes)
+  private static Location[] FindAntiNodeLocationsWithHarmonics(Map map, Location location1, Location location2)
   {
-    if (map.IsOnMap(candidateLocation) && !antiNodes.Contains(candidateLocation))
+    var rowDisplacement = location2.Row - location1.Row;
+    var colDisplacement = location2.Col - location1.Col;
+
+    var harmonics1 = FindHarmonics(map, location1, -1 * rowDisplacement, -1 * colDisplacement);
+    var harmonics2 = FindHarmonics(map, location2, +1 * rowDisplacement, +1 * colDisplacement);
+
+    return [..harmonics1, ..harmonics2];
+  }
+
+  private static Location[] FindHarmonics(Map map, Location startLocation, int rowDisplacement, int colDisplacement)
+  {
+    var locations = new List<Location>();
+    var index = 0;
+    while (true)
     {
-      antiNodes.Add(candidateLocation);
+      var location = new Location
+      {
+        Row = startLocation.Row + rowDisplacement * index,
+        Col = startLocation.Col + colDisplacement * index
+      };
+
+      if (!map.IsOnMap(location))
+      {
+        break;
+      }
+
+      locations.Add(location);
+      index++;
     }
+
+    return locations.ToArray();
   }
 
-  private static (Location, Location) FindAntiNodeLocation(Location location1, Location location2)
+  private static Location[] FindPrimaryAntiNodeLocationsOnly(Location location1, Location location2)
   {
-    // find the row and column displacement of the two locations
     var rowDisplacement = location2.Row - location1.Row;
     var colDisplacement = location2.Col - location1.Col;
 
@@ -82,7 +110,18 @@ public class Problem(string filename = @"data\problem8-input.txt") : IProblem
       Col = location2.Col + colDisplacement
     };
 
-    return (antiNode1, antiNode2);
+    return [antiNode1, antiNode2];
+  }
+
+  private static void TryAdd(Location[] candidateLocations, Map map, List<Location> antiNodes)
+  {
+    foreach (var candidateLocation in candidateLocations)
+    {
+      if (map.IsOnMap(candidateLocation) && !antiNodes.Contains(candidateLocation))
+      {
+        antiNodes.Add(candidateLocation);
+      }
+    }
   }
 
   private static (Location, Location)[] GetPairs(Antenna[] antennae)

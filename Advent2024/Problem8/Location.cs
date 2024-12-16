@@ -8,7 +8,7 @@ public record Location
     Col = from.Col;
   }
 
-  public int Row { get; set; }
+  public int Row { get; init; }
 
-  public int Col { get; set; }
+  public int Col { get; init; }
 }

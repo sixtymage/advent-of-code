@@ -34,27 +34,20 @@ public class FileSystem(string input)
     return blocks;
   }
 
-  public int IndexOfLastFile()
+  public void Compact()
   {
-    return _blocks.FindLastIndex(b => !b.IsEmpty);
-  }
+    while (true)
+    {
+      var sourceIndex = IndexOfLastFile();
+      var targetIndex = IndexOfFirstEmptyBlock();
 
-  public int IndexOfFirstEmptyBlock()
-  {
-    return _blocks.FindIndex(b => b.IsEmpty);
-  }
+      Swap(sourceIndex, targetIndex);
 
-  public void Swap(int sourceIndex, int targetIndex)
-  {
-    (_blocks[sourceIndex], _blocks[targetIndex]) = (_blocks[targetIndex], _blocks[sourceIndex]);
-  }
-
-  public bool IsCompacted()
-  {
-    var indexOfLastFile = IndexOfLastFile();
-    var indexOfFirstEmptyBlock = IndexOfFirstEmptyBlock();
-
-    return indexOfFirstEmptyBlock > indexOfLastFile;
+      if (IsCompacted())
+      {
+        break;
+      }
+    }
   }
 
   public long CalculateChecksum()
@@ -93,6 +86,29 @@ public class FileSystem(string input)
 
       searchIndex = startIndex - 1;
     }
+  }
+
+  private int IndexOfLastFile()
+  {
+    return _blocks.FindLastIndex(b => !b.IsEmpty);
+  }
+
+  private int IndexOfFirstEmptyBlock()
+  {
+    return _blocks.FindIndex(b => b.IsEmpty);
+  }
+
+  private void Swap(int sourceIndex, int targetIndex)
+  {
+    (_blocks[sourceIndex], _blocks[targetIndex]) = (_blocks[targetIndex], _blocks[sourceIndex]);
+  }
+
+  private bool IsCompacted()
+  {
+    var indexOfLastFile = IndexOfLastFile();
+    var indexOfFirstEmptyBlock = IndexOfFirstEmptyBlock();
+
+    return indexOfFirstEmptyBlock > indexOfLastFile;
   }
 
   private (int, int, int) FindLastFile(int searchIndex)

@@ -13,7 +13,7 @@ public class Problem(string filename = @"data\problem9-input.txt") : IProblem
   private static void SolvePart1(string[] lines)
   {
     var fileSystem = new FileSystem(lines[0]);
-    Compact(fileSystem);
+    fileSystem.Compact();
     var checksum = fileSystem.CalculateChecksum();
     Console.WriteLine($"Part 1: Checksum is {checksum}");
   }
@@ -24,25 +24,5 @@ public class Problem(string filename = @"data\problem9-input.txt") : IProblem
     fileSystem.CompactWholeFiles();
     var checksum = fileSystem.CalculateChecksum();
     Console.WriteLine($"Part 2: Checksum is {checksum}");
-  }
-
-  private static void CompactWholeFiles(FileSystem fileSystem)
-  {
-  }
-
-  private static void Compact(FileSystem fileSystem)
-  {
-    while (true)
-    {
-      var sourceIndex = fileSystem.IndexOfLastFile();
-      var targetIndex = fileSystem.IndexOfFirstEmptyBlock();
-
-      fileSystem.Swap(sourceIndex, targetIndex);
-
-      if (fileSystem.IsCompacted())
-      {
-        break;
-      }
-    }
   }
 }

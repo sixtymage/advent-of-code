@@ -60,17 +60,89 @@ public class FileSystem(string input)
   public long CalculateChecksum()
   {
     long checksum = 0;
-    var emptyIndex = IndexOfFirstEmptyBlock();
-    for (var i = 0; i < emptyIndex; i++)
+    for (var i = 0; i < _blocks.Count; i++)
     {
-      if (_blocks[i].IsEmpty)
+      if (!_blocks[i].IsEmpty)
       {
-        throw new InvalidOperationException("Checksum cannot include empty blocks");
+        checksum += i * _blocks[i].Id!.Value;
       }
-
-      checksum += i * _blocks[i].Id!.Value;
     }
 
     return checksum;
+  }
+
+  public void CompactWholeFiles()
+  {
+    var searchIndex = _blocks.Count - 1;
+
+    while (true)
+    {
+      var (id, startIndex, numBlocks) = FindLastFile(searchIndex);
+
+      var targetIndex = IndexOfContiguousFreeBlocks(startIndex, numBlocks);
+
+      if (targetIndex != -1)
+      {
+        MoveFile(startIndex, numBlocks, targetIndex);
+      }
+
+      if (id == 0)
+      {
+        break;
+      }
+
+      searchIndex = startIndex - 1;
+    }
+  }
+
+  private (int, int, int) FindLastFile(int searchIndex)
+  {
+    while (_blocks[searchIndex].IsEmpty)
+    {
+      searchIndex--;
+    }
+
+    var id = _blocks[searchIndex].Id!.Value;
+    var numBlocks = 0;
+    while (true)
+    {
+      searchIndex--;
+      numBlocks++;
+
+      if (searchIndex < 0 || _blocks[searchIndex].IsEmpty || _blocks[searchIndex].Id!.Value != id)
+      {
+        return (id, searchIndex+1, numBlocks);
+      }
+    }
+  }
+
+  private int IndexOfContiguousFreeBlocks(int beforeIndex, int numFreeBlocksNeeded)
+  {
+    var numFreeBlocks = 0;
+    for (var i = 0; i < beforeIndex; i++)
+    {
+      if (_blocks[i].IsEmpty)
+      {
+        numFreeBlocks++;
+        if (numFreeBlocks == numFreeBlocksNeeded)
+        {
+          return i - numFreeBlocks + 1;
+        }
+      }
+      else
+      {
+        numFreeBlocks = 0;
+      }
+    }
+
+    return -1;
+  }
+
+  private void MoveFile(int startIndex, int numBlocks, int targetIndex)
+  {
+    for (var i = 0; i < numBlocks; i++)
+    {
+      Swap(startIndex + i, targetIndex + i);
+    }
   }
 }

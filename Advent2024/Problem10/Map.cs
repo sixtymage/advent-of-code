@@ -20,6 +20,38 @@ public class Map(Matrix<int> matrix)
     return locations.ToArray();
   }
 
+  public void FindTrails(Location start, Location end, int numSteps, Trail trail, List<Trail> trails)
+  {
+    if (Math.Abs(end.Row - start.Row) > numSteps || Math.Abs(end.Col - start.Col) > numSteps)
+    {
+      return;
+    }
+
+    if (numSteps == 0 && start == end)
+    {
+      trails.Add(trail);
+      return;
+    }
+
+    // get nearby locations that are one step higher than the start height
+    var candidateNextLocations = GetNextLocation(start, GetHeight(start) + 1);
+
+    // if no such locations, we're done
+    if (candidateNextLocations.Length == 0)
+    {
+      return;
+    }
+
+    // otherwise iterate each location and see if there is a trail of length numSteps-1 from there to the end
+    foreach (var candidateNextLocation in candidateNextLocations)
+    {
+      // make a copy of the trail to this point
+      var extendedTrail = new Trail(trail);
+      extendedTrail.AddLocation(candidateNextLocation);
+      FindTrails(candidateNextLocation, end, numSteps - 1, extendedTrail, trails);
+    }
+  }
+
   public bool DoesTrailExist(Location start, Location end, int numSteps)
   {
     if (Math.Abs(end.Row - start.Row) > numSteps || Math.Abs(end.Col - start.Col) > numSteps)

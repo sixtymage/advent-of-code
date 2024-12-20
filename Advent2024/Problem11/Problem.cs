@@ -7,6 +7,11 @@ public class Problem(string filename = @"data\problem11-input.txt") : IProblem
     var lines = await File.ReadAllLinesAsync(filename);
     var stones = lines[0].Split(" ").Select(long.Parse).ToList();
 
+    SolvePart1(stones);
+  }
+
+  private static void SolvePart1(List<long> stones)
+  {
     const int maxNumBlinks = 25;
     for (var i = 0; i < maxNumBlinks; i++)
     {

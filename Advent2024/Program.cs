@@ -41,6 +41,7 @@ internal static class Program
       9 => new Problem9.Problem(),
       10 => new Problem10.Problem(),
       11 => new Problem11.Problem(),
+      12 => new Problem12.Problem(),
       _ => new NullProblem()
     };
   }

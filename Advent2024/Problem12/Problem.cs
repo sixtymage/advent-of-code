@@ -7,6 +7,7 @@ public class Problem(string filename = @"data\problem12-input.txt") : IProblem
     var lines = await File.ReadAllLinesAsync(filename);
 
     SolvePart1(lines);
+    SolvePart2(lines);
   }
 
   private static void SolvePart1(string[] lines)
@@ -15,11 +16,11 @@ public class Problem(string filename = @"data\problem12-input.txt") : IProblem
     var map = new Map(matrix);
     var zones = map.GetZones();
 
-    var cost = zones.Sum(CalcCost);
-    Console.WriteLine($"Cost to fence all zones is: {cost}");
+    var cost = zones.Sum(CalcCostPerimeter);
+    Console.WriteLine($"Part 1: Cost to fence all zones is: {cost}");
   }
 
-  private static int CalcCost(Zone zone)
+  private static int CalcCostPerimeter(Zone zone)
   {
     var perimeter = FindPerimeter(zone);
     return perimeter * zone.Area;
@@ -38,6 +39,34 @@ public class Problem(string filename = @"data\problem12-input.txt") : IProblem
     }
 
     return perimeter;
+  }
+
+  private static void SolvePart2(string[] lines)
+  {
+    var matrix = ExtractInput(lines);
+    var map = new Map(matrix);
+    var zones = map.GetZones();
+
+    var cost = zones.Sum(z => CalcCostSides(z, map));
+    Console.WriteLine($"Part 2: Cost to fence all zones is: {cost}");
+  }
+
+  private static int CalcCostSides(Zone zone, Map map)
+  {
+    var sides = CalcNumSides(zone, map);
+    return sides * zone.Area;
+  }
+
+  private static int CalcNumSides(Zone zone, Map map)
+  {
+    var numSides = 0;
+
+    numSides += map.CalcNumSides(zone, Side.Top);
+    numSides += map.CalcNumSides(zone, Side.Bottom);
+    numSides += map.CalcNumSides(zone, Side.Left);
+    numSides += map.CalcNumSides(zone, Side.Right);
+
+    return numSides;
   }
 
   private static int CalcNumSharedEdges(Location location, IEnumerable<Location> otherLocations)

@@ -8,11 +8,27 @@ public class Problem(string filename = @"data\problem13-input.txt") : IProblem
   {
     var lines = await File.ReadAllLinesAsync(filename);
 
-    var clawMachines = ExtractClawMachines(lines);
-    SolvePart1(clawMachines);
+    SolvePart1(lines);
+    SolvePart2(lines);
   }
 
-  private static void SolvePart1(ClawMachine[] clawMachines)
+  private void SolvePart2(string[] lines)
+  {
+    var clawMachines = ExtractClawMachines(lines, 10_000_000_000_000);
+    var sum = CalcFewestTokens(clawMachines);
+
+    Console.WriteLine($"Part 2: The fewest tokens is {sum}");
+  }
+
+  private static void SolvePart1(string[] lines)
+  {
+    var clawMachines = ExtractClawMachines(lines, 0);
+    var sum = CalcFewestTokens(clawMachines);
+
+    Console.WriteLine($"Part 1: The fewest tokens is {sum}");
+  }
+
+  private static long CalcFewestTokens(ClawMachine[] clawMachines)
   {
     long sum = 0;
     foreach (var clawMachine in clawMachines)
@@ -20,7 +36,7 @@ public class Problem(string filename = @"data\problem13-input.txt") : IProblem
       sum += SolveMachine(clawMachine);
     }
 
-    Console.WriteLine($"Part 1: The fewest tokens is {sum}");
+    return sum;
   }
 
   private static long SolveMachine(ClawMachine clawMachine)
@@ -29,7 +45,7 @@ public class Problem(string filename = @"data\problem13-input.txt") : IProblem
 
     if (d == 0)
     {
-      return SolveMachineSameVectorDirection(clawMachine);
+      return HandleSameVectorDirection();
     }
 
     var an = clawMachine.B.Y * clawMachine.Prize.X - clawMachine.Prize.Y * clawMachine.B.X;
@@ -43,20 +59,18 @@ public class Problem(string filename = @"data\problem13-input.txt") : IProblem
     return an / d * 3 + bn / d;
   }
 
-  private static long SolveMachineSameVectorDirection(ClawMachine clawMachine)
+  private static long HandleSameVectorDirection()
   {
-    Debugger.Break();
-    return 0;
+    throw new InvalidDataException("The claw machine solver doesn't support vectors with the same direction");
   }
 
-  private static ClawMachine[] ExtractClawMachines(string[] lines)
+  private static ClawMachine[] ExtractClawMachines(string[] lines, long prizeOffset)
   {
     var clawMachines = new List<ClawMachine>();
 
     var step = 0;
     Vector? buttonA = null;
     Vector? buttonB = null;
-    Vector? prize = null;
 
     foreach (var line in lines)
     {
@@ -75,8 +89,8 @@ public class Problem(string filename = @"data\problem13-input.txt") : IProblem
           buttonB = ExtractButton('B', line);
           break;
         case 2:
-          prize = ExtractPrize(line);
-          clawMachines.Add(new ClawMachine(buttonA!, buttonB!, prize!));
+          var prize = ExtractPrize(line, prizeOffset);
+          clawMachines.Add(new ClawMachine(buttonA!, buttonB!, prize));
           break;
         default:
           throw new InvalidOperationException($"Unknown line: {line}");
@@ -88,12 +102,12 @@ public class Problem(string filename = @"data\problem13-input.txt") : IProblem
     return clawMachines.ToArray();
   }
 
-  private static Vector? ExtractPrize(string line)
+  private static Vector ExtractPrize(string line, long offset)
   {
     line = line.Replace($"Prize: X=", "");
     line = line.Replace(" Y=", "");
     var split = line.Split(',');
-    return new Vector(int.Parse(split[0]), int.Parse(split[1]));
+    return new Vector(long.Parse(split[0]) + offset, long.Parse(split[1]) + offset);
   }
 
   private static Vector ExtractButton(char button, string line)
@@ -101,6 +115,6 @@ public class Problem(string filename = @"data\problem13-input.txt") : IProblem
     line = line.Replace($"Button {button}: X+", "");
     line = line.Replace(" Y+", "");
     var split = line.Split(',');
-    return new Vector(int.Parse(split[0]), int.Parse(split[1]));
+    return new Vector(long.Parse(split[0]), long.Parse(split[1]));
   }
 }

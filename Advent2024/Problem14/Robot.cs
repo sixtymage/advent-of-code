@@ -1,8 +1,12 @@
 namespace Advent2024.Problem14;
 
-public class Robot(Vector position, Vector velocity, int rows, int cols)
+public class Robot(int x, int y,  int vx, int vy, int rows, int cols)
 {
-  private Vector _position = position;
+  private int _x = x;
+  private int _y = y;
+
+  public int X => _x;
+  public int Y => _y;
 
   public bool IsInQuadrant(int quadrant)
   {
@@ -11,23 +15,26 @@ public class Robot(Vector position, Vector velocity, int rows, int cols)
 
     return quadrant switch
     {
-      0 => _position.X < middleCol && _position.Y < middleRow,
-      1 => _position.X > middleCol && _position.Y < middleRow,
-      2 => _position.X < middleCol && _position.Y > middleRow,
-      3 => _position.X > middleCol && _position.Y > middleRow,
-      _ => throw new ArgumentException($"Invalid robot position: {_position}"),
+      0 => _x < middleCol && _y < middleRow,
+      1 => _x > middleCol && _y < middleRow,
+      2 => _x < middleCol && _y > middleRow,
+      3 => _x > middleCol && _y > middleRow,
+      _ => throw new ArgumentException($"Invalid robot position")
     };
   }
 
-  public void Move()
+  public void Move(long numSeconds)
   {
-    var newX = (_position.X + velocity.X + cols) % cols;
-    var newY = (_position.Y + velocity.Y + rows) % rows;
-    _position = new Vector(newX, newY);
+    _x += (int)(vx * numSeconds);
+    _x %= cols;
+    _x = _x < 0 ? _x + cols : _x;
+    _y += (int)(vy * numSeconds);
+    _y %= rows;
+    _y = _y < 0 ? _y + rows : _y;
   }
 
   public bool IsPosition(int row, int col)
   {
-    return _position.X == col && _position.Y == row;
+    return _x == col && _y == row;
   }
 }

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Advent2024.Problem14;
 
 public class Problem(string filename = @"data\problem14-input.txt") : IProblem
@@ -17,6 +19,75 @@ public class Problem(string filename = @"data\problem14-input.txt") : IProblem
     var lines = await File.ReadAllLinesAsync(filename);
 
     SolvePart1(lines, rows, cols, showSteps);
+    SolvePart2(lines, rows, cols, showSteps);
+  }
+
+  private static void SolvePart2(string[] lines, int rows, int cols, bool showSteps)
+  {
+    var robots = ExtractRobots(lines, rows, cols);
+
+    long numSeconds = 0;
+    long bestSecond = 0;
+    var bestScore = 0;
+    const long target = 1_000_000;
+    const int increment = 1;
+
+    var sw = Stopwatch.StartNew();
+
+    while (true)
+    {
+      MoveRobots(robots, increment, rows, cols, showSteps);
+      numSeconds += increment;
+
+      var score = GetScore(robots);
+      if (score > bestScore)
+      {
+        bestScore = score;
+        bestSecond = numSeconds;
+      }
+
+      if (numSeconds == target)
+      {
+        break;
+      }
+
+      if (numSeconds / increment % 100_000 == 0)
+      {
+        var rate = numSeconds / sw.Elapsed.TotalSeconds;
+        var remainingTimeSeconds = (target - numSeconds) / rate;
+        var suffix = $" ({numSeconds}/{target}, {TimeSpan.FromSeconds(remainingTimeSeconds)} remaining)";
+        Console.WriteLine(
+          $"{sw.Elapsed}: Current Second: {numSeconds} Current Score: {score} Best Second: {bestSecond} Best Score: {bestScore} {suffix}");
+      }
+    }
+
+    Console.WriteLine($"Part 2: The answer is probably {bestSecond} with score {bestScore}");
+
+    var solutionRobots = ExtractRobots(lines, rows, cols);
+    MoveRobots(solutionRobots, bestSecond, rows, cols, true);
+  }
+
+  private static int GetScore(Robot[] robots)
+  {
+    var groups = robots.GroupBy(r => r.Y);
+
+    var score = 0;
+    foreach (var group in groups)
+    {
+      var orderedRobots = group
+        .OrderBy(r => r.X)
+        .ToArray();
+
+      for (var r = 1; r < orderedRobots.Length; r++)
+      {
+        var distance = Math.Abs(orderedRobots[r - 1].X - orderedRobots[r].X);
+        score = distance == 1
+          ? score + 1
+          : score;
+      }
+    }
+
+    return score;
   }
 
   private static void SolvePart1(string[] lines, int rows, int cols, bool showSteps)
@@ -40,18 +111,14 @@ public class Problem(string filename = @"data\problem14-input.txt") : IProblem
     return safetyFactor;
   }
 
-  private static void MoveRobots(Robot[] robots, int seconds, int rows, int cols, bool showSteps)
+  private static void MoveRobots(Robot[] robots, long seconds, int rows, int cols, bool showSteps)
   {
-    WriteRobots(robots, rows, cols, showSteps);
-
-    for (var i = 0; i < seconds; i++)
+    foreach (var robot in robots)
     {
-      foreach (var robot in robots)
-      {
-        robot.Move();
-        WriteRobots(robots, rows, cols, showSteps);
-      }
+      robot.Move(seconds);
     }
+
+    WriteRobots(robots, rows, cols, showSteps);
   }
 
   private static void WriteRobots(Robot[] robots, int rows, int cols, bool showSteps)
@@ -119,8 +186,10 @@ public class Problem(string filename = @"data\problem14-input.txt") : IProblem
     var position = split[0].Replace("p=", "").Split(',');
     var velocity = split[1].Replace("v=", "").Split(',');
     return new Robot(
-      new Vector(int.Parse(position[0]), int.Parse(position[1])),
-      new Vector(int.Parse(velocity[0]), int.Parse(velocity[1])),
+      int.Parse(position[0]),
+      int.Parse(position[1]),
+      int.Parse(velocity[0]),
+      int.Parse(velocity[1]),
       rows,
       cols);
   }

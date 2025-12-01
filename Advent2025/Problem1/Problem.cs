@@ -1,4 +1,6 @@
 
+using System.Reflection.Metadata.Ecma335;
+
 namespace Advent2025.Problem1;
 
 public class Problem(string filename = @"data\problem1-input.txt") : IProblem
@@ -14,15 +16,66 @@ public class Problem(string filename = @"data\problem1-input.txt") : IProblem
 
     foreach (var move in moves)
     {
-      position = (position + move) % 100;
+      (int newPosition, int zeroHits) = PerformMove(position, move, false);
 
-      count = position == 0 ? count + 1 : count;
+      position = newPosition;
+      count += zeroHits;
     }
 
     Console.WriteLine($"Answer is: {count}");
   }
 
-  private static IEnumerable<int> LoadMoves(string[] lines)
+  private static (int, int) PerformMove(int position, int move, bool isPart1)
+  {
+    return isPart1
+      ? PerformMovePart1(position, move)
+      : PerformMovePart2(position, move);
+  }
+
+  private static (int, int) PerformMovePart2(int position, int move)
+  {
+    var numClicks = 0;
+    while (move != 0)
+    {
+      if (move < 0)
+      {
+        position = MovePosition(position, -1);
+        move++;
+      }
+      else
+      {
+        position = MovePosition(position, 1);
+        move--;
+      }
+
+      if (position == 0)
+      {
+        numClicks++;
+      }
+    }
+
+    return (position, numClicks);
+  }
+
+  private static int MovePosition(int position, int move)
+  {
+    int newPosition = (position + move) % 100;
+
+    return newPosition < 0
+      ? newPosition + 100 
+      : newPosition;
+  }
+
+  private static (int, int) PerformMovePart1(int position, int move)
+  {
+    // this is easy - just add move and mod by 100 and see if we landed on 0
+    position = MovePosition(position, move);
+    int numClicks = position == 0 ? 1 : 0;
+
+    return (position, numClicks);
+  }
+
+  private static List<int> LoadMoves(string[] lines)
   {
     var moves = new List<int>();
     foreach (var line in lines)

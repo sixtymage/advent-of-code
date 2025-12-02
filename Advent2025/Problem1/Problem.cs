@@ -1,6 +1,4 @@
 
-using System.Reflection.Metadata.Ecma335;
-
 namespace Advent2025.Problem1;
 
 public class Problem(string filename = @"data\problem1-input.txt") : IProblem

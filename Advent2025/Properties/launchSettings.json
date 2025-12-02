@@ -2,7 +2,7 @@
   "profiles": {
     "Advent2025": {
       "commandName": "Project",
-      "commandLineArgs": "1"
+      "commandLineArgs": "2"
     }
   }
 }

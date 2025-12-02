@@ -30,7 +30,8 @@ internal static class Program
   {
     return problemId switch
     {
-      1 => new Advent2025.Problem1.Problem(),
+      1 => new Problem1.Problem(),
+      2 => new Problem2.Problem(),
       _ => new NullProblem()
     };
   }

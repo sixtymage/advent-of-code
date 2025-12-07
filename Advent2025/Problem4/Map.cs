@@ -23,6 +23,36 @@ namespace Advent2025.Problem4
       _locations = CopyLocations(map._locations);
     }
 
+    public void Replace(char findChar, char replaceChar)
+    {
+      for (var row = 0; row < Rows; row++)
+      {
+        for (var col = 0; col < Cols; col++)
+        {
+          if (_locations[row, col] == findChar)
+          {
+            SetLocation(row, col, replaceChar);
+          }
+        }
+      }
+    }
+
+    public int Count(char matchingChar)
+    {
+      int count = 0;
+      for (var row = 0; row < Rows; row++)
+      {
+        for (var col = 0; col < Cols; col++)
+        {
+          if (_locations[row, col] == matchingChar)
+          {
+            count++;
+          }
+        }
+      }
+      return count;
+    }
+
     public int CountAdjacent(int row, int col, char matchingChar)
     {
       int count = 0;
